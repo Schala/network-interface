@@ -3,31 +3,28 @@
 
 #include <bitset>
 #include <boost/predef.h>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 
-#include "../common.hpp"
-
-namespace cmm
+namespace ACCESS
 {
-	namespace access
+	enum
 	{
-		enum
-		{
-			all
-		};
-	}
-
-	class account : public std::enable_shared_from_this<account>
-	{
-	private:
-		std::string name_;
-		std::string login_;
-		std::vector<uint8> password_;
-		std::bitset<access::all> access_;
+		ALL
 	};
 }
+
+class Account : public std::enable_shared_from_this<Account>
+{
+private:
+	std::string m_name;
+	std::string m_login;
+	std::vector<uint8_t> m_pw;
+	std::bitset<ACCESS::ALL> m_access;
+	uint16_t m_icon;
+};
 
 #endif // _HL_ACCOUNT_H

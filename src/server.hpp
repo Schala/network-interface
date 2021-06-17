@@ -1,150 +1,174 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
+#ifdef BUILD_SERVER
+
 #include <algorithm>
 #include <exception>
 #include <iostream>
 #include <system_error>
 #include <thread>
-#include <utility>
 
 #include "connection.hpp"
 
-#define _CMM_SERVER_BUILD
-
-namespace cmm
+template <class T> class ServerInterface
 {
-	template <class T> class server_interface
+public:
+	ServerInterface(uint16_t port, size_t maxThreads);
+	virtual ~ServerInterface();
+	bool Start();
+	void Stop();
+	void Wait();
+	void Send(std::shared_ptr<Connection<T>> client, const T &msg);
+	void SendAll(const T &msg, std::shared_ptr<Connection<T>> ignore = nullptr);
+	void Update(size_t maxMsgs = -1);
+protected:
+	TSQueue<OwnedMsg<T>> m_pendingIn;
+	std::deque<std::shared_ptr<Connection<T>>> m_connections;
+	boost::asio::io_context m_ctx;
+	std::thread m_ctxThread;
+	boost::asio::ip::tcp::acceptor m_acceptor;
+	boost::asio::thread_pool m_threadPool;
+
+	virtual bool OnClientConnect(std::shared_ptr<Connection<T>> client);
+	virtual void OnClientDisconnect(std::shared_ptr<Connection<T>> client);
+	virtual void OnReceive(std::shared_ptr<Connection<T>> client, T &msg);
+};
+
+template <class T>
+ServerInterface<T>::ServerInterface(uint16_t port, size_t maxThreads):
+	m_acceptor(m_ctx, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
+	m_threadPool(maxThreads)
+{
+}
+
+template <class T>
+ServerInterface<T>::~ServerInterface()
+{
+	Stop();
+}
+
+template <class T>
+bool ServerInterface<T>::Start()
+{
+	try
 	{
-	public:
-		server_interface(uint16 port):
-			acceptor_(context_, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+		Wait(); // issue work BEFORE starting context, or it will exit immediately
+
+		m_ctxThread = std::thread([this]()
 		{
-		}
+			m_ctx.run();
+		});
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << "Failed to start:" << e.what() << std::endl;
+		return false;
+	}
 
-		virtual ~server_interface()
+	std::cout << "Server started" << std::endl;
+	return true;
+}
+
+template <class T>
+void ServerInterface<T>::Stop()
+{
+	m_ctx.stop();
+	if (m_ctxThread.joinable()) m_ctxThread.join();
+	std::cout << "Server stopped" << std::endl;
+}
+
+template <class T>
+void ServerInterface<T>::Wait()
+{
+	m_acceptor.async_accept(
+		[this](std::error_code ec, boost::asio::ip::tcp::socket socket)
 		{
-			stop();
-		}
-
-		bool start()
-		{
-			try
-			{
-				wait(); // issue work BEFORE starting context, or it will exit immediately
-
-				context_thread_ = std::thread([this]()
-				{
-					context_.run();
-				});
-			}
-			catch (std::exception &e_)
-			{
-				std::cerr << "Failed to start:" << e_.what() << std::endl;
-				return false;
-			}
-
-			std::cout << "Server started" << std::endl;
-			return true;
-		}
-
-		void stop()
-		{
-			context_.stop();
-			if (context_thread_.joinable()) context_thread_.join();
-			std::cout << "Server stopped" << std::endl;
-		}
-
-		void wait()
-		{
-			acceptor_.async_accept(
-				[this](std::error_code ec_, boost::asio::ip::tcp::socket socket_)
-				{
-					if (ec_)
-						std::cout << "Connection error: " << ec_.message() << std::endl;
-					else
-					{
-						std::cout << "New connection: " << socket_.remote_endpoint() << std::endl;
-						auto conn_ =
-							std::make_shared<connection<T>>(connection<T>::owner::server, context_,
-								std::move(socket_), pending_in_);
-						
-						if (on_client_connect(conn_))
-							connections_.push_back(std::move(conn_));
-						else
-							std::cout << "Connection denied." << std::endl;
-					}
-
-					wait();
-				});
-		}
-
-		void send(std::shared_ptr<connection<T>> client, const T &msg)
-		{
-			if (client && client->is_connected())
-				client->send(msg);
+			if (ec)
+				std::cout << "Connection error: " << ec.message() << std::endl;
 			else
 			{
-				on_client_disconnect(client);
-				client.reset();
-				connections_.erase(std::remove(connections_.begin(), connections_.end(), client),
-					connections_.end());
-			}
-		}
-
-		void send_all(const T &msg, std::shared_ptr<connection<T>> ignore = nullptr)
-		{
-			bool invalid_client_found_ = false;
-
-			for (auto &client_ : connections_)
-			{
-				if (client_ && client_->is_connected())
-				{
-					if (client_ != ignore)
-						client_->send(msg);
-				}
+				std::cout << "New connection: " << socket.remote_endpoint() << std::endl;
+				auto conn =
+					std::make_shared<Connection<T>>(Connection<T>::Owner::Server, m_ctx,
+						std::move(socket), m_pendingIn);
+				
+				if (OnClientConnect(conn))
+					m_connections.push_back(std::move(conn));
 				else
-				{
-					on_client_disconnect(client_);
-					client_.reset();
-					invalid_client_found_ = true;
-				}
+					std::cout << "Connection denied." << std::endl;
 			}
 
-			if (invalid_client_found_)
-				connections_.erase(std::remove(connections_.begin(), connections_.end(), nullptr));
-		}
-
-		void update(sizeint max_messages = -1)
-		{
-			sizeint msg_count_ = 0;
-
-			while (msg_count_++ < max_messages && !pending_in_.empty())
-			{
-				auto msg = pending_in_.pop_front();
-				on_receive(msg.remote, msg.data);
-			}
-		}
-	protected:
-		tsqueue<owned_message<T>> pending_in_;
-		std::deque<std::shared_ptr<connection<T>>> connections_;
-		boost::asio::io_context context_;
-		std::thread context_thread_;
-		boost::asio::ip::tcp::acceptor acceptor_;
-
-		virtual bool on_client_connect(std::shared_ptr<connection<T>> client)
-		{
-			return false;
-		}
-
-		virtual void on_client_disconnect(std::shared_ptr<connection<T>> client)
-		{
-		}
-
-		virtual void on_receive(std::shared_ptr<connection<T>> client, T &msg)
-		{
-		}
-	};
+			Wait();
+		});
 }
+
+template <class T>
+void ServerInterface<T>::Send(std::shared_ptr<Connection<T>> client, const T &msg)
+{
+	if (client && client->IsConnected())
+		client->Send(msg);
+	else
+	{
+		OnClientDisconnect(client);
+		client.reset();
+		m_connections.erase(std::remove(m_connections.begin(), m_connections.end(), client),
+			m_connections.end());
+	}
+}
+
+template <class T>
+void ServerInterface<T>::SendAll(const T &msg, std::shared_ptr<Connection<T>> ignore)
+{
+	bool invalidClientFound = false;
+
+	for (auto &client : m_connections)
+	{
+		if (client && client->IsConnected())
+		{
+			if (client != ignore)
+				client->Send(msg);
+		}
+		else
+		{
+			OnClientDisconnect(client);
+			client.reset();
+			invalidClientFound = true;
+		}
+	}
+
+	if (invalidClientFound)
+		m_connections.erase(std::remove(m_connections.begin(), m_connections.end(), nullptr));
+}
+
+template <class T>
+void ServerInterface<T>::Update(size_t maxMsgs)
+{
+	size_t msgCount = 0;
+
+	while (msgCount++ < maxMsgs && !m_pendingIn.empty())
+	{
+		auto msg = m_pendingIn.PopFront();
+		OnReceive(msg.remote, msg.data);
+	}
+}
+
+template <class T>
+bool ServerInterface<T>::OnClientConnect(std::shared_ptr<Connection<T>> client)
+{
+	return false;
+}
+
+template <class T>
+void ServerInterface<T>::OnClientDisconnect(std::shared_ptr<Connection<T>> client)
+{
+}
+
+template <class T>
+void ServerInterface<T>::OnReceive(std::shared_ptr<Connection<T>> client, T &msg)
+{
+}
+
+#endif // BUILD_SERVER
 
 #endif // _SERVER_H

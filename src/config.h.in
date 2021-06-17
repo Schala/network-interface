@@ -1,0 +1,5 @@
+#ifndef _CONFIG_H
+
+#cmakedefine BUILD_SERVER
+
+#endif // _CONFIG_H

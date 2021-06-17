@@ -5,62 +5,84 @@
 #include <memory>
 #include <utility>
 
-#include "owned_message.hpp"
+#include "owned_msg.hpp"
 #include "tsqueue.hpp"
 
-namespace cmm
+/// A connection between a client and a server
+template <class T> class Connection : public std::enable_shared_from_this<Connection<T>>
 {
-	/// A connection between a client and a server
-	template <class T> class connection : public std::enable_shared_from_this<connection<T>>
+public:
+	enum class Owner : uint8_t
 	{
-	public:
-		enum class owner : uint8
-		{
-			server = 0,
-			client
-		};
-
-		connection(owner parent, boost::asio::io_context &context,
-			boost::asio::ip::tcp::socket socket, tsqueue<owned_message<T>> &in_queue):
-			socket_(std::move(socket)), context_(context), pending_in_(in_queue), owner_(parent)
-		{
-		}
-
-		virtual ~connection()
-		{
-		}
-
-		bool connect()
-		{
-		}
-
-		bool disconnect()
-		{
-		}
-
-		bool is_connected() const
-		{
-			return socket_.is_open();
-		}
-
-		bool send(const T &msg)
-		{
-		}
-
-#ifdef _CMM_SERVER_BUILD
-		void push_temp()
-		{
-			pending_in_.push_back({ this->shared_from_this(), temp_in_ });
-		}
-#endif // _CMM_SERVER_BUILD
-	protected:
-		boost::asio::ip::tcp::socket socket_;
-		boost::asio::io_context &context_;
-		tsqueue<T> pending_out_;
-		tsqueue<owned_message<T>> &pending_in_;
-		T temp_in_;
-		owner owner_;
+		Server = 0,
+		Client
 	};
+
+	Connection(Owner parent, boost::asio::io_context &context,
+		boost::asio::ip::tcp::socket socket, TSQueue<OwnedMsg<T>> &inQueue);
+	virtual ~Connection();
+	bool Connect();
+	bool Disconnect();
+	bool IsConnected() const;
+	bool Send(const T &msg);
+
+#ifdef BUILD_SERVER
+	void PushTemp();
+#endif // BUILD_SERVER
+protected:
+	boost::asio::ip::tcp::socket m_socket;
+	boost::asio::io_context &m_ctx;
+	TSQueue<T> m_pendingOut;
+	TSQueue<OwnedMsg<T>> &m_pendingIn;
+#ifdef BUILD_SERVER
+	T m_tempIn;
+#endif // BUILD_SERVER
+	Owner m_owner;
+};
+
+template <class T>
+Connection<T>::Connection(Owner parent, boost::asio::io_context &context,
+	boost::asio::ip::tcp::socket socket, TSQueue<OwnedMsg<T>> &inQueue):
+	m_socket(std::move(socket)), m_ctx(context), m_pendingIn(inQueue), m_owner(parent)
+{
 }
+
+template <class T>
+Connection<T>::~Connection()
+{
+}
+
+template <class T>
+bool Connection<T>::Connect()
+{
+	return true;
+}
+
+template <class T>
+bool Connection<T>::Disconnect()
+{
+	return true;
+}
+
+template <class T>
+bool Connection<T>::IsConnected() const
+{
+	return m_socket.is_open();
+}
+
+template <class T>
+bool Connection<T>::Send(const T &msg)
+{
+	return true;
+}
+
+#ifdef BUILD_SERVER
+template <class T>
+void Connection<T>::PushTemp()
+{
+	m_pendingIn.push_back({ this->shared_from_this(), m_tempIn });
+}
+#endif // BUILD_SERVER
+
 
 #endif // _CONNECTION_H
