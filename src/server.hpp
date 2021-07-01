@@ -14,7 +14,7 @@
 template <class T> class ServerInterface
 {
 public:
-	ServerInterface(uint16_t port, size_t maxThreads);
+	ServerInterface(uint16_t port, size_t capacity, size_t maxThreads);
 	virtual ~ServerInterface();
 	bool Start();
 	void Stop();
@@ -29,6 +29,7 @@ protected:
 	std::thread m_ctxThread;
 	boost::asio::ip::tcp::acceptor m_acceptor;
 	boost::asio::thread_pool m_threadPool;
+	size_t m_capacity;
 
 	virtual bool OnClientConnect(std::shared_ptr<Connection<T>> client);
 	virtual void OnClientDisconnect(std::shared_ptr<Connection<T>> client);
@@ -36,9 +37,10 @@ protected:
 };
 
 template <class T>
-ServerInterface<T>::ServerInterface(uint16_t port, size_t maxThreads):
+ServerInterface<T>::ServerInterface(uint16_t port, size_t capacity, size_t maxThreads):
 	m_acceptor(m_ctx, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
-	m_threadPool(maxThreads)
+	m_threadPool(maxThreads),
+	m_capacity(capacity)
 {
 }
 
@@ -146,7 +148,7 @@ void ServerInterface<T>::Update(size_t maxMsgs)
 {
 	size_t msgCount = 0;
 
-	while (msgCount++ < maxMsgs && !m_pendingIn.empty())
+	while (msgCount++ < maxMsgs && !m_pendingIn.IsEmpty())
 	{
 		auto msg = m_pendingIn.PopFront();
 		OnReceive(msg.remote, msg.data);

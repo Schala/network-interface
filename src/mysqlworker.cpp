@@ -1,7 +1,10 @@
-#include <mysql/mysql.h>
 #include <utility>
 
-#include "tsmysql.hpp"
+#include "mysqlworker.hpp"
+
+MySQLRec::MySQLRec()
+{
+}
 
 MySQLRec::MySQLRec(MYSQL *db, const std::string_view &operation):
 	op(std::move(operation)),
@@ -9,44 +12,39 @@ MySQLRec::MySQLRec(MYSQL *db, const std::string_view &operation):
 {
 }
 
-TSMySQL::TSMySQL(const std::string_view &host, const std::string_view &username,
-	const std::string_view password, uint16_t port, unsigned flags):
-
+MySQLWorker::MySQLWorker(const std::string_view &host, const std::string_view &username,
+	const std::string_view &password, uint16_t port, unsigned flags)
 {
 	m_db = mysql_init(nullptr);
 	m_db = mysql_real_connect(m_db, host.data(), username.data(), password.data(), nullptr,
 		port, nullptr, flags);
 }
 
-TSMySQL::~TSMySQL()
+MySQLWorker::~MySQLWorker()
 {
 	Close();
 }
 
-void TSMySQL::Close()
+void MySQLWorker::Close()
 {
 	std::scoped_lock lock(m_mutex);
 	if (m_db) mysql_close(m_db);
 }
 
-int TSMySQL::GetLastResult() const
+int MySQLWorker::GetLastResult()
 {
 	std::scoped_lock lock(m_mutex);
 	return m_current.result;
 }
 
-std::string_view& TSMySQL::GetLastError() const
+std::string_view MySQLWorker::GetLastError()
 {
 	std::scoped_lock lock(m_mutex);
-	return m_current.error;
+	return std::string_view(m_current.error);
 }
 
-std::string_view& TSMySQL::GetLastOp() const
+std::string_view MySQLWorker::GetLastOp()
 {
 	std::scoped_lock lock(m_mutex);
-	return m_current.op;
-}
-
-void TSMySQL::Run()
-{
+	return std::string_view(m_current.op);
 }

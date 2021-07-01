@@ -2,11 +2,11 @@
 
 int main(int argc, char **argv)
 {
-	test_server srv(6666);
-	srv.start();
+	TestServer srv(6666);
+	srv.Start();
 
 	while (1)
-		srv.update();
+		srv.Update();
 		
 	return 0;
 }

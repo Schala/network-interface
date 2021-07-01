@@ -5,6 +5,7 @@
 #include <deque>
 #include <mutex>
 #include <utility>
+#include <vector>
 
 /// Thread-safe queue
 template <class T> class TSQueue
@@ -20,10 +21,10 @@ public:
 	virtual ~TSQueue();
 
 	/// Reference to the front element of the queue
-	const T& Front();
+	const T& Front() const;
 
 	/// Reference to the last element of the queue
-	const T& Back();
+	const T& Back() const;
 
 	/**
 	 * Appends an element to the end of the queue
@@ -38,10 +39,10 @@ public:
 	void PushFront(const T &item);
 
 	/// Is the queue empty?
-	bool IsEmpty();
+	bool IsEmpty() const;
 
 	/// Number of elements in the queue
-	size_t Size();
+	size_t Size() const;
 
 	/// Clears the queue of all elements
 	void Clear();
@@ -66,16 +67,14 @@ TSQueue<T>::~TSQueue()
 }
 
 template <class T>
-const T& TSQueue<T>::Front()
+const T& TSQueue<T>::Front() const
 {
-	std::scoped_lock lock(m_mutex);
 	return m_queue.front();
 }
 
 template <class T>
-const T& TSQueue<T>::Back()
+const T& TSQueue<T>::Back() const
 {
-	std::scoped_lock lock(m_mutex);
 	return m_queue.back();
 }
 
@@ -94,16 +93,14 @@ void TSQueue<T>::PushFront(const T &item)
 }
 
 template <class T>
-bool TSQueue<T>::IsEmpty()
+bool TSQueue<T>::IsEmpty() const
 {
-	std::scoped_lock lock(m_mutex);
 	return m_queue.empty();
 }
 
 template <class T>
-size_t TSQueue<T>::Size()
+size_t TSQueue<T>::Size() const
 {
-	std::scoped_lock lock(m_mutex);
 	return m_queue.size();
 }
 

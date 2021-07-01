@@ -1,6 +1,11 @@
+#include <boost/predef.h>
 #include <iostream>
+#include <openssl/sha.h>
 #include <sqlite3.h>
 
+#include "lib/asset.hpp"
+#include "lib/protocol.hpp"
+#include "dbworker.hpp"
 #include "server.hpp"
 
 static constexpr char CREATE_DEFAULT_DB[] =
@@ -10,7 +15,6 @@ static constexpr char CREATE_DEFAULT_DB[] =
 		crc INTEGER NOT NULL DEFAULT 3642843792,\
 		flags INTEGER DEFAULT 0,\
 		type INTEGER NOT NULL DEFAULT 1349676912,\
-		data BLOB\
 	);\
 	CREATE TABLE rooms (\
 		id INTEGER PRIMARY KEY AUTOINCREMENT DEFAULT 86,\
@@ -37,14 +41,17 @@ static constexpr char CREATE_DEFAULT_DB[] =
 	);\
 	CREATE TABLE states (\
 		id INTEGER PRIMARY KEY AUTOINCREMENT,\
-		pic INTEGER\
+		pic INTEGER,\
+		v INTEGER,\
+		h INTEGER\
 	);\
 	CREATE TABLE spots (\
 		id INTEGER PRIMARY KEY AUTOINCREMENT,\
 		name TEXT,\
 		script_event_mask INTEGER,\
 		flags INTEGER,\
-		pos INTEGER,\
+		v INTEGER,\
+		h INTEGER,\
 		dest INTEGER,\
 		type INTEGER DEFAULT 0,\
 		state INTEGER DEFAULT 0,\
@@ -60,7 +67,8 @@ static constexpr char CREATE_DEFAULT_DB[] =
 	CREATE TABLE lprops (\
 		id INTEGER PRIMARY KEY AUTOINCREMENT,\
 		asset INTEGER,\
-		pos INTEGER\
+		v INTEGER,\
+		h INTEGER\
 	);\
 	CREATE TABLE bans (\
 		id INTEGER PRIMARY KEY AUTOINCREMENT,\
@@ -73,12 +81,49 @@ static constexpr char CREATE_DEFAULT_DB[] =
 		hash TEXT NOT NULL,\
 		password BLOB NOT NULL\
 	);\
+	CREATE TABLE clients (\
+		id INTEGER PRIMARY KEY AUTOINCREMENT,\
+		sig VARCHAR(6) NOT NULL,\
+		name TEXT NOT NULL,\
+	);\
 	\
-	INSERT INTO rooms (name) VALUES ('Gate');
+	INSERT INTO rooms (name) VALUES ('Gate');\
+	\
+	INSERT INTO clients (sig, name)\
+	VALUES\
+		('350211', 'ThePalace'),\
+		('PC4237', 'PalaceChat'),\
+		('OPNPAL', 'OpenPalace'),\
+		('J2.0', 'InstantPalace');\
 	"
 
-PalaceServer::PalaceServer(uint16_t port, size_t maxThreads):
-	ServerInterface<PalaceMessage>(port, maxThreads)
+struct BanRec
+{
+	std::string_view ip;
+	uint64_t expires;
+	std::string_view info;
+};
+
+struct PictureRec
+{
+	std::string_view path;
+	uint16_t alpha;
+};
+
+struct PasswordRec
+{
+	std::array<uint8_t, SHA512_DIGEST_LENGTH> hash;
+	Str31 data;
+};
+
+struct ClientRec
+{
+	std::array<char, 6> sig;
+	std::string_view name;
+}
+
+PalaceServer::PalaceServer(uint16_t port, size_t capacity, size_t maxThreads):
+	ServerInterface<PalaceMessage>(port, capacity, maxThreads)
 {
 }
 
@@ -86,12 +131,23 @@ PalaceServer::~PalaceServer()
 {
 }
 
-bool PalaceServer::GetDefaultDB(std::filesystem::path path) const
+constexpr uint8_t PalaceServer::GetPlatform() const
+{
+#if BOOST_OS_MACOS
+	return PLAT_MAC;
+#elif BOOST_OS_WINDOWS
+	return PLAT_WINNT;
+#else
+	return PLAT_UNIX;
+#endif
+}
+
+bool PalaceServer::CreateDefaultDB(std::filesystem::path path) const
 {
 	sqlite3 *db;
 	char *errMsg = nullptr;
 	
-	if (sqlite3_open(path.c_str(), &db) != SQLITE_OK)
+	if (sqlite3_open(path.string().data(), &db) != SQLITE_OK)
 	{
 		std::cerr << "Unable to write new database to " << path << ": " <<
 			sqlite3_errmsg(db) << std::endl;
@@ -110,4 +166,14 @@ bool PalaceServer::GetDefaultDB(std::filesystem::path path) const
 
 	sqlite3_close(db);
 	return true;
+}
+
+bool PalaceServer::CleanUnusedIDs() const
+{
+	std::vector<Point> points;
+	std::vector<Asset> assets;
+	std::vector<BanRec> bans;
+	std::vector<PictureRec> pics;
+	std::vector<PasswordRec> passwords;
+	std::vector<ClientRec> clients;
 }

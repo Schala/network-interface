@@ -7,6 +7,7 @@
 struct AssetSpec;
 struct PROP_FLAGS;
 struct Str31;
+class PalaceDBWorker;
 
 class Asset : public std::enable_shared_from_this<Asset>
 {
@@ -18,6 +19,8 @@ public:
 	Asset& SetSpec(const AssetSpec &spec);
 	Asset& SetFlags(const PROP_FLAGS &flags);
 	Asset& SetName(const char *name);
+	bool Load(PalaceDBWorker &dbWorker);
+	bool Save(PalaceDBWorker &dbWorker) const;
 private:
 	static constexpr uint32_t MAGIC = 0xD9216290;
 

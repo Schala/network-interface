@@ -12,7 +12,7 @@ class TSKDXCodec;
 class KDXServer : public ServerInterface<>
 {
 public:
-	KDXServer(uint16_t port, size_t maxThreads, size_t maxFileTransfers);
+	KDXServer(uint16_t port, size_t capacity, size_t maxThreads, size_t maxFileTransfers);
 private:
 	TSKDXCodec m_codec;
 	std::array<uint32_t, 3> m_keys;

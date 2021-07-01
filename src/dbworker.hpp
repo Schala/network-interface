@@ -1,31 +1,36 @@
-#ifndef _TSDATABASE_H
-#define _TSDATABASE_H
+#ifndef _DBWORKER_H
+#define _DBWORKER_H
 
 #include <vector>
 
 #include "tsqueue.hpp"
 
-template <class DB, class Rec> class TSDatabase
+template <class DB, class Rec> class DBWorker
 {
 public:
+	DBWorker();
 	virtual void Close() = 0;
 	void Dump(std::vector<Rec> &dest, bool closeDB = true);
-	virtual int GetLastResult() const = 0;
-	virtual std::string_view& GetLastError() const = 0;
-	virtual std::string_view& GetLastOp() const = 0;
+	virtual int GetLastResult() = 0;
+	virtual std::string_view GetLastError() = 0;
+	virtual std::string_view GetLastOp() = 0;
 	virtual void Run() = 0;
 	void Push(Rec &r);
 	DB& GetHandle() const;
 protected:
 	std::mutex m_mutex;
 	DB m_db;
-private:
-	TSQueue<Rec> m_pending;
 	Rec m_current;
+	TSQueue<Rec> m_pending;
 };
 
 template <class DB, class Rec>
-void TSDatabase<DB, Rec>::Dump(std::vector<Rec> &dest, bool closeDB)
+DBWorker<DB, Rec>::DBWorker()
+{
+}
+
+template <class DB, class Rec>
+void DBWorker<DB, Rec>::Dump(std::vector<Rec> &dest, bool closeDB)
 {
 	std::scoped_lock lock(m_mutex);
 
@@ -34,16 +39,16 @@ void TSDatabase<DB, Rec>::Dump(std::vector<Rec> &dest, bool closeDB)
 }
 
 template <class DB, class Rec>
-void TSDatabase<DB, Rec>::Push(Rec &r)
+void DBWorker<DB, Rec>::Push(Rec &r)
 {
 	std::scoped_lock lock(m_mutex);
 	m_pending.PushBack(r);
 }
 
 template <class DB, class Rec>
-DB& TSDatabase<DB, Rec>::GetHandle() const
+DB& DBWorker<DB, Rec>::GetHandle() const
 {
 	return m_db;
 }
 
-#endif // _TSDATABASE_H
+#endif // _DBWORKER_H
