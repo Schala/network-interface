@@ -4,7 +4,7 @@
 
 void Str31::Set(const char *newText)
 {
-	std::memset(text, 0, 31);
+	std::memset_s(text, 0, 31);
 	size = std::strlen(newText);
 	std::strncpy(text, newText, size >= 31 ? 31 : size);
 }
@@ -16,7 +16,7 @@ void Str31::Set(const Str31 &other)
 
 void Str63::Set(const char *newText)
 {
-	std::memset(text, 0, 63);
+	std::memset_s(text, 0, 63);
 	size = std::strlen(newText);
 	std::strncpy(text, newText, size >= 63 ? 63 : size);
 }

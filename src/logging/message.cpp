@@ -1,18 +1,11 @@
-#include <chrono>
 #include <utility>
 
 #include "message.hpp"
 
-LogMsg::LogMsg(LogLevel level, std::wstring &&text):
-	text(std::forward<std::wstring>(text)),
+LogMsg::LogMsg(const std::string_view &category, LogLevel level, std::string &&text):
+	category(category),
+	text(std::forward<std::string>(text)),
+	time(std::chrono::current_zone(), std::chrono::system_clock::now()),
 	level(level)
 {
-	using namespace std::chrono;
-
-	std::time_t now = system_clock::to_time_t(system_clock::now());
-#ifdef _WIN32_WINNT
-	localtime_s(&time, &now);
-#else
-	localtime_s(&now, &time);
-#endif
 }

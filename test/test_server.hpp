@@ -2,6 +2,7 @@
 #define _TEST_SERVER_H
 
 #include <string>
+#include <utility>
 
 #define BUILD_SERVER
 
@@ -13,19 +14,21 @@ public:
 	TestServer(uint16_t port): ServerInterface<std::string>(port, 250, 10)
 	{
 	}
-protected:
-	virtual bool OnClientConnect(std::shared_ptr<Connection<std::string>> client)
+private:
+	uint32_t m_nextID;
+
+	bool OnClientConnect(std::shared_ptr<Connection<std::string>> client)
 	{
 		return true;
 	}
 
-	virtual void OnClientDisconnect(std::shared_ptr<Connection<std::string>> client)
+	void OnClientDisconnect(std::shared_ptr<Connection<std::string>> client)
 	{
 	}
 
-	virtual void OnReceive(std::shared_ptr<Connection<std::string>> client, std::string &msg)
+	void OnReceive(std::shared_ptr<Connection<std::string>> client, std::string &msg)
 	{
-		std::cout << msg << std::endl;
+		S_LOG.WriteMsg(CATEGORY, LogLevel::Verbose, std::move(msg));
 	}
 };
 

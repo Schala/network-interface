@@ -2,13 +2,15 @@
 #define _LOG_APPENDER_H
 
 #include <string>
+#include <string_view>
 
-#include "common.hpp"
+#include "message.hpp"
 
 struct LogAppenderFlags
 {
-	unsigned
-		compress : 1; // file only
+	uint8_t
+		compress : 1, // file only
+		colour : 1; // console only
 };
 
 struct LogMsg;
@@ -16,7 +18,7 @@ struct LogMsg;
 class LogAppender
 {
 public:
-	static constexpr std::wstring_view GetLevelStr(LogLevel level);
+	static constexpr std::string_view GetLevelStr(LogLevel level);
 
 	LogAppender(const LogAppenderFlags &flags, LogLevel level);
 	virtual ~LogAppender();
@@ -28,7 +30,8 @@ protected:
 	LogAppenderFlags m_flags;
 	LogLevel m_level;
 
-	virtual void OnWrite(const std::wstring &msg) = 0;
+	virtual void OnBeginFormat(std::string &text, const LogMsg &msg);
+	virtual void OnWrite(const std::string &msg) = 0;
 };
 
 #endif // _LOG_APPENDER_H

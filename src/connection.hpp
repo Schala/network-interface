@@ -3,6 +3,7 @@
 
 #include <boost/asio.hpp>
 #include <memory>
+#include <string_view>
 #include <utility>
 
 //#include <config.h>
@@ -13,10 +14,11 @@
 template <class T> class Connection : public std::enable_shared_from_this<Connection<T>>
 {
 public:
+	static const std::string_view CATEGORY;
+	
 	enum class Owner : uint8_t
 	{
-		Server = 0,
-		Client
+		Server, Client
 	};
 
 	Connection(Owner parent, boost::asio::io_context &context,
@@ -26,6 +28,7 @@ public:
 	bool Disconnect();
 	bool IsConnected() const;
 	bool Send(const T &msg);
+	std::string GetAddressStr() const;
 
 #ifdef BUILD_SERVER
 	void PushTemp();
@@ -40,6 +43,9 @@ protected:
 #endif // BUILD_SERVER
 	Owner m_owner;
 };
+
+template <class T>
+const std::string_view Connection<T>::CATEGORY = "[CONNECTION]";
 
 template <class T>
 Connection<T>::Connection(Owner parent, boost::asio::io_context &context,
@@ -75,6 +81,12 @@ template <class T>
 bool Connection<T>::Send(const T &msg)
 {
 	return true;
+}
+
+template <class T>
+std::string Connection<T>::GetAddressStr() const
+{
+	return m_socket.remote_endpoint().address().to_string();
 }
 
 #ifdef BUILD_SERVER

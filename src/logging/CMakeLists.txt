@@ -1,4 +1,4 @@
-list (APPEND LIB_SOURCES
+set (LOGGING_SOURCES
 	appender.cpp
 	appender.hpp
 	common.hpp
@@ -13,3 +13,6 @@ list (APPEND LIB_SOURCES
 	message.cpp
 	message.hpp
 )
+
+add_library (cmmnet_logging ${LOGGING_SOURCES})
+target_include_directories (cmmnet_logging PUBLIC ${CMAKE_BINARY_DIR}/src)

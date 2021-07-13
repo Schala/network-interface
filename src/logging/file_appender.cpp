@@ -1,8 +1,9 @@
 #include "file_appender.hpp"
 
-FileLogAppender::FileLogAppender(std::wofstream &stream, const LogAppenderFlags &flags,
+FileLogAppender::FileLogAppender(const std::filesystem::path &path, const LogAppenderFlags &flags,
 		LogLevel level):
-	ConsoleLogAppender(stream, flags, level)
+	LogAppender(flags, level),
+	m_stream(std::ofstream(path))
 {
 }
 
@@ -13,5 +14,10 @@ FileLogAppender::~FileLogAppender()
 
 void FileLogAppender::Close()
 {
-	dynamic_cast<std::wofstream *>(&m_stream)->close();
+	m_stream.close();
+}
+
+void FileLogAppender::OnWrite(const std::string &msg)
+{
+	m_stream << msg;
 }

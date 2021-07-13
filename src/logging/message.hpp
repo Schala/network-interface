@@ -1,31 +1,21 @@
 #ifndef _LOG_MESSAGE_H
 #define _LOG_MESSAGE_H
 
-#include <ctime>
+#include <chrono>
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 #include "common.hpp"
 
-enum class LogCategory : uint8_t
-{
-	Server,
-	User,
-	Room,
-	Database,
-	Asset,
-	Script,
-	Debug
-};
-
 struct LogMsg
 {
-	LogMsg(LogLevel level, std::wstring &&text);
+	LogMsg(const std::string_view &category, LogLevel level, std::string &&text);
 
-	std::wstring text;
-	std::tm time;
+	std::string_view category;
+	std::string_view text;
+	std::chrono::zoned_time<std::chrono::system_clock::duration> time;
 	LogLevel level;
-	LogCategory category;
 };
 
 #endif // _LOG_MESSAGE_H

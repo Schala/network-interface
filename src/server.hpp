@@ -4,16 +4,20 @@
 #ifdef BUILD_SERVER
 
 #include <algorithm>
-#include <exception>
-#include <iostream>
+#include <format>
+#include <stdexcept>
+#include <string_view>
 #include <system_error>
 #include <thread>
 
 #include "connection.hpp"
+#include "logging/log.hpp"
 
 template <class T> class ServerInterface
 {
 public:
+	static const std::string_view CATEGORY;
+
 	ServerInterface(uint16_t port, size_t capacity, size_t maxThreads);
 	virtual ~ServerInterface();
 	bool Start();
@@ -35,6 +39,9 @@ protected:
 	virtual void OnClientDisconnect(std::shared_ptr<Connection<T>> client);
 	virtual void OnReceive(std::shared_ptr<Connection<T>> client, T &msg);
 };
+
+template <class T>
+const std::string_view ServerInterface<T>::CATEGORY = "[SERVER]";
 
 template <class T>
 ServerInterface<T>::ServerInterface(uint16_t port, size_t capacity, size_t maxThreads):
@@ -62,13 +69,13 @@ bool ServerInterface<T>::Start()
 			m_ctx.run();
 		});
 	}
-	catch (std::exception &e)
+	catch (std::runtime_error &e)
 	{
-		std::cerr << "Failed to start:" << e.what() << std::endl;
+		S_LOG.WriteMsg(CATEGORY, LogLevel::Fatal, std::format("Failed to start: {}", e.what()));
 		return false;
 	}
 
-	std::cout << "Server started" << std::endl;
+	S_LOG.WriteMsg(CATEGORY, LogLevel::Verbose, "Server started");
 	return true;
 }
 
@@ -77,7 +84,7 @@ void ServerInterface<T>::Stop()
 {
 	m_ctx.stop();
 	if (m_ctxThread.joinable()) m_ctxThread.join();
-	std::cout << "Server stopped" << std::endl;
+	S_LOG.WriteMsg(CATEGORY, LogLevel::Verbose, "Server stopped");
 }
 
 template <class T>
@@ -87,10 +94,13 @@ void ServerInterface<T>::Wait()
 		[this](std::error_code ec, boost::asio::ip::tcp::socket socket)
 		{
 			if (ec)
-				std::cout << "Connection error: " << ec.message() << std::endl;
+				S_LOG.WriteMsg(Connection<T>::CATEGORY, LogLevel::Error,
+					ec.message());
 			else
 			{
-				std::cout << "New connection: " << socket.remote_endpoint() << std::endl;
+				S_LOG.WriteMsg(Connection<T>::CATEGORY, LogLevel::Verbose,
+					std::format("Incoming from {}", socket.remote_endpoint().address().to_string()));
+					
 				auto conn =
 					std::make_shared<Connection<T>>(Connection<T>::Owner::Server, m_ctx,
 						std::move(socket), m_pendingIn);
@@ -98,7 +108,8 @@ void ServerInterface<T>::Wait()
 				if (OnClientConnect(conn))
 					m_connections.push_back(std::move(conn));
 				else
-					std::cout << "Connection denied." << std::endl;
+					S_LOG.WriteMsg(Connection<T>::CATEGORY, LogLevel::Warning,
+						std::format("Connection denied from {}", conn->GetAddressStr()));
 			}
 
 			Wait();

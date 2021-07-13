@@ -134,7 +134,7 @@ struct AssetQuery
 
 struct PROP_FLAGS
 {
-	unsigned
+	uint32_t
 		head : 1,
 		ghost : 1,
 		rare : 1,
@@ -226,7 +226,7 @@ struct EXT_INFO_HEADER
 
 struct EXT_INFO_REQ_FLAGS
 {
-	unsigned
+	uint32_t
 		avatarURL : 1,
 		serverVersion : 1,
 		serverType : 1,
@@ -239,7 +239,7 @@ struct EXT_INFO_REQ_FLAGS
 
 struct EXT_INFO_FLAGS_FLAGS
 {
-	unsigned
+	uint16_t
 		directPlay : 1,
 		closedServer : 1,
 		guestsAreMembers : 1,
@@ -281,7 +281,7 @@ struct FILE_SEND_HEADER
 
 struct ROOM_FLAGS16
 {
-	unsigned
+	uint16_t
 		authorLocked : 1,
 		isPrivate : 1,
 		noPainting : 1,
@@ -297,7 +297,7 @@ struct ROOM_FLAGS16
 
 struct ROOM_FLAGS32
 {
-	unsigned
+	uint32_t
 		authorLocked : 1,
 		isPrivate : 1,
 		noPainting : 1,
@@ -320,7 +320,7 @@ struct ROOM_LIST_REC_HEADER
 
 struct USER_FLAGS
 {
-	unsigned
+	uint16_t
 		superUser : 1,
 		god : 1,
 		kill : 1,
@@ -353,7 +353,7 @@ enum
 
 struct AUX_FLAGS
 {
-	unsigned
+	uint32_t
 		os : 4,
 		_reserved : 27,
 		authenticate : 1;
@@ -376,7 +376,7 @@ struct UL_CAPS
 
 struct DL_CAPS
 {
-	unsigned
+	uint32_t
 		palaceAssets : 1,
 		ftpAssets : 1,
 		httpAssets : 1,
@@ -392,7 +392,7 @@ struct DL_CAPS
 
 struct ENG_CAPS_2D
 {
-	unsigned
+	uint32_t
 		palace : 1,
 		doubleByte : 1,
 		_reserved : 30;
@@ -400,7 +400,7 @@ struct ENG_CAPS_2D
 
 struct GFX_CAPS_2D
 {
-	unsigned
+	uint32_t
 		gif87 : 1,
 		gif89a : 1,
 		jpeg : 1,
@@ -413,7 +413,7 @@ struct GFX_CAPS_2D
 
 struct ENG_CAPS_3D
 {
-	unsigned
+	uint32_t
 		vrml1 : 1,
 		vrml2 : 1,
 		_reserved : 30;
@@ -494,7 +494,7 @@ struct ROOM_HEADER
 
 struct SCRIPT_EVENT_MASK
 {
-	unsigned
+	uint32_t
 		select : 1,
 		lock : 1,
 		unlock : 1,
@@ -541,7 +541,7 @@ enum
 
 struct SPOT_FLAGS
 {
-	unsigned
+	uint32_t
 		draggable : 1,
 		dontMoveHere : 1,
 		invisible : 1,
@@ -623,7 +623,7 @@ enum
 
 struct SERVER_PERMS
 {
-	unsigned
+	uint32_t
 		allowGuests : 1,
 		allowCyborgs : 1,
 		allowPainting : 1,
@@ -643,7 +643,7 @@ struct SERVER_PERMS
 
 struct SERVER_OPTIONS
 {
-	unsigned
+	uint32_t
 		saveSessionKeys : 1,
 		passwordSecurity : 1,
 		chatLog : 1,

@@ -8,11 +8,14 @@
 class ConsoleLogAppender : public LogAppender
 {
 public:
-	ConsoleLogAppender(std::wostream &stream, const LogAppenderFlags &flags, LogLevel level);
-protected:
-	std::wostream &m_stream;
+	ConsoleLogAppender(std::ostream &stream, const LogAppenderFlags &flags, LogLevel level);
+	~ConsoleLogAppender();
+	void Close();
 private:
-	void OnWrite(const std::wstring &msg);
+	std::ostream &m_stream;
+	
+	void OnBeginFormat(std::string &text, const LogMsg &msg);
+	void OnWrite(const std::string &msg);
 };
 
 #endif // _LOG_CONSOLE_APPENDER_H

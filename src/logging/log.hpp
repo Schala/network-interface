@@ -2,21 +2,20 @@
 #define _LOG_H
 
 #include <filesystem>
-#include <memory>
-#include <utility>
+#include <string>
 
-#include "common.hpp"
 #include "logger.hpp"
-#include "message.hpp"
 
 class Log
 {
 public:
 	static Log& Get();
 	
-	void WriteMsg(LogCategory category, LogLevel level, std::wstring &&msg);
+	void WriteMsg(const std::string_view &category, LogLevel level, std::string &&msg);
 	void SetLowestLevel(LogLevel level);
 	void SetLogger(const Logger &logger);
+	void AddAppender(LogAppender *appender);
+	void RemoveAppender(uint8_t id);
 private:
 	std::filesystem::path m_path;
 	Logger m_logger;

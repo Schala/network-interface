@@ -2,7 +2,7 @@
 #include "logger.hpp"
 #include "message.hpp"
 
-Logger::Logger(const std::wstring &name, LogLevel level):
+Logger::Logger(const std::string &name, LogLevel level):
 	m_name(name),
 	m_level(level)
 {
@@ -14,7 +14,7 @@ Logger::~Logger()
 		 delete v;
 }
 
-std::wstring& Logger::GetName()
+std::string& Logger::GetName()
 {
 	return m_name;
 }
@@ -39,10 +39,8 @@ void Logger::RemoveAppender(uint8_t id)
 	m_appenders.erase(id);
 }
 
-Logger& Logger::Write(const LogMsg &msg)
+void Logger::Write(const LogMsg &msg)
 {
 	for (auto &[k, v] : m_appenders)
 		if (v) v->Write(msg);
-	
-	return *this;
 }

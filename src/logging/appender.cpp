@@ -1,21 +1,20 @@
-#include <iomanip>
-#include <sstream>
-#include <uchar.h>
+#include <format>
+#include <iostream>
 
 #include "appender.hpp"
 #include "message.hpp"
 
-constexpr std::wstring_view LogAppender::GetLevelStr(LogLevel level)
+constexpr std::string_view LogAppender::GetLevelStr(LogLevel level)
 {
 	using namespace std::string_view_literals;
 
 	switch (level)
 	{
-		case LogLevel::Warning: return L"[WARNING]\t"sv;
-		case LogLevel::Error: return L"[ERROR]\t"sv;
-		case LogLevel::Fatal: return L"[FATAL]\t"sv;
-		case LogLevel::Debug: return L"[DEBUG]\t"sv;
-		default: return L""sv;
+		case LogLevel::Warning: return "[WARNING]\t"sv;
+		case LogLevel::Error: return "[ERROR]\t"sv;
+		case LogLevel::Fatal: return "[FATAL]\t"sv;
+		case LogLevel::Debug: return "[DEBUG]\t"sv;
+		default: return ""sv;
 	}
 }
 
@@ -38,10 +37,13 @@ void LogAppender::Write(const LogMsg &msg)
 {
 	if (m_level < msg.level) return;
 
-	std::wostringstream ss;
+	std::string s = "";
 
-	ss << GetLevelStr(msg.level) << std::put_time(&msg.time, L"%F %T - ");
-	ss << msg.text << std::endl;
+	OnBeginFormat(s, msg);
+	s += std::format("{} {:%F %X %p} {}\n", GetLevelStr(msg.level), msg.time, msg.text);
+	OnWrite(s);
+}
 
-	OnWrite(ss.str());
+void LogAppender::OnBeginFormat(std::string &text, const LogMsg &msg)
+{
 }
