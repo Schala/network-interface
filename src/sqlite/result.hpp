@@ -11,7 +11,7 @@ public:
 	~SQLiteResult();
 	const char* GetErrorMsg() const;
 	int GetResultCode() const;
-	std::string_view& GetQuery() const;
+	std::string_view& GetQuery();
 private:
 	std::string_view m_query;
 	char *m_error;

@@ -14,7 +14,7 @@ constexpr std::string_view LogAppender::GetLevelStr(LogLevel level)
 		case LogLevel::Error: return "[ERROR]\t"sv;
 		case LogLevel::Fatal: return "[FATAL]\t"sv;
 		case LogLevel::Debug: return "[DEBUG]\t"sv;
-		default: return ""sv;
+		default: return "\t"sv;
 	}
 }
 
@@ -40,7 +40,7 @@ void LogAppender::Write(const LogMsg &msg)
 	std::string s = "";
 
 	OnBeginFormat(s, msg);
-	s += std::format("{} {:%F %X %p} {}\n", GetLevelStr(msg.level), msg.time, msg.text);
+	s += std::format("{} {} {:%F %X %p} {}\n", msg.category, GetLevelStr(msg.level), msg.time, msg.text);
 	OnWrite(s);
 }
 

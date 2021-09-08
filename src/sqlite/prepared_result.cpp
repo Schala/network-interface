@@ -3,7 +3,7 @@
 #include "prepared_result.hpp"
 
 SQLitePreparedResult::SQLitePreparedResult(sqlite3 *db, const std::string_view &query,
-		const std::vector<SQLiteType> &columnTypes)):
+		const std::vector<SQLiteType> &columnTypes):
 	m_query(query)
 {
 }
@@ -23,12 +23,12 @@ int SQLitePreparedResult::GetResultCode() const
 	return m_result;
 }
 
-std::string_view& SQLitePreparedResult::GetQuery() const
+std::string_view& SQLitePreparedResult::GetQuery()
 {
 	return m_query;
 }
 
-SQLiteVariable& SQLitePreparedResult::operator[](size_t index) const
+SQLiteVariable SQLitePreparedResult::operator[](size_t index) const
 {
 	return m_vars.at(index);
 }

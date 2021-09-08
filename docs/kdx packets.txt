@@ -1,20 +1,19 @@
-client login packet:
-
+sender packet:
 00-03: encryption key
 04-07: '%TXP'
 08-0B: '%KDX'
 0C:    1
 0D:    10
 0E:    0
-0F:    login name length
+0F:    data length
 10-13: 0
 14-15: 0
 16-17: encryption key crc16?
 18-23: some integrity number? [3]
 24-2F: checked with the integrity numbers above [3]
-30...: login name
+30...: data
 
-server reply packet:
+reply packet:
 00-03: encryption key
 04-07: '%TXP'
 08-0B: '%KDX'

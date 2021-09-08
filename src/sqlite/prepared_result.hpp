@@ -17,7 +17,8 @@ typedef std::variant<
 			int16_t, uint16_t,
 			int32_t, uint32_t,
 			int64_t, uint64_t,
-			std::string, std::u16string /* text, varchar */> SQLiteVariable;
+			std::string, std::u16string // text, varchar
+				> SQLiteVariable;
 
 enum class SQLiteType : uint8_t
 {
@@ -39,8 +40,8 @@ public:
 	~SQLitePreparedResult();
 	const char* GetErrorMsg() const;
 	int GetResultCode() const;
-	std::string_view& GetQuery() const;
-	SQLiteVariable& operator[](size_t index) const;
+	std::string_view& GetQuery();
+	SQLiteVariable operator[](size_t index) const;
 private:
 	std::vector<SQLiteVariable> m_vars;
 	sqlite3_stmt *m_stmt;
